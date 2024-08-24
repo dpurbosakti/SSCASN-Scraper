@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/xuri/excelize/v2"
@@ -15,8 +17,8 @@ import (
 
 const (
 	baseURL     = "https://api-sscasn.bkn.go.id/2024/portal/spf"
-	kodeRefPend = "5101087"
-	namaJurusan = "S1 Teknik Informatika"
+	kodeRefPend = "4609080"
+	namaJurusan = "DIII Fisioterapi"
 )
 
 var headers = map[string]string{
@@ -43,6 +45,10 @@ type Response struct {
 		} `json:"meta"`
 		Data []map[string]interface{} `json:"data"`
 	} `json:"data"`
+}
+
+func setNamaJurusan(namaJurusan string) string {
+	return strings.ReplaceAll(namaJurusan, " ", "_")
 }
 
 func fetchData(offset int, retries int, delay time.Duration) (*Response, error) {
@@ -105,7 +111,7 @@ func main() {
 
 	timestamp := time.Now().Format("20060102_150405")
 	dataDir := "data"
-	excelOutputFile := filepath.Join(dataDir, fmt.Sprintf("sscasn_data_%s.xlsx", timestamp))
+	excelOutputFile := filepath.Join(dataDir, fmt.Sprintf("sscasn_data_%s.xlsx", setNamaJurusan(namaJurusan)+"_"+timestamp))
 
 	// Create the data directory if it doesn't exist
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
@@ -145,14 +151,17 @@ func main() {
 
 	// Set data
 	for i, record := range allData {
+		gajiMin, _ := strconv.ParseFloat(record["gaji_min"].(string), 64)
+		gajiMax, _ := strconv.ParseFloat(record["gaji_max"].(string), 64)
+
 		f.SetCellValue(sheet, fmt.Sprintf("A%d", i+5), record["ins_nm"])
 		f.SetCellValue(sheet, fmt.Sprintf("B%d", i+5), record["jp_nama"])
 		f.SetCellValue(sheet, fmt.Sprintf("C%d", i+5), record["formasi_nm"])
 		f.SetCellValue(sheet, fmt.Sprintf("D%d", i+5), record["jabatan_nm"])
 		f.SetCellValue(sheet, fmt.Sprintf("E%d", i+5), record["lokasi_nm"])
 		f.SetCellValue(sheet, fmt.Sprintf("F%d", i+5), record["jumlah_formasi"])
-		f.SetCellValue(sheet, fmt.Sprintf("G%d", i+5), record["gaji_min"])
-		f.SetCellValue(sheet, fmt.Sprintf("H%d", i+5), record["gaji_max"])
+		f.SetCellValue(sheet, fmt.Sprintf("G%d", i+5), gajiMin)
+		f.SetCellValue(sheet, fmt.Sprintf("H%d", i+5), gajiMax)
 		f.SetCellValue(sheet, fmt.Sprintf("I%d", i+5), fmt.Sprintf("https://sscasn.bkn.go.id/detailformasi/%v", record["formasi_id"]))
 	}
 
