@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -98,7 +99,15 @@ func fetchData(offset int, retries int, delay time.Duration) (*Response, error) 
 	return nil, fmt.Errorf("failed to fetch data after %d retries", retries)
 }
 
+func locationFilter(lokasi string, filterLokasi *string) bool {
+	return strings.Contains(strings.ToLower(lokasi), strings.ToLower(*filterLokasi))
+}
+
 func main() {
+	fmt.Println("Cek flag provinsi...")
+	var filterLokasi *string = flag.String("provinsi", "", "Provinsi yang diinginkan. Contoh: -provinsi=\"Jawa Timur\"")
+	flag.Parse()
+
 	fmt.Println("Memulai proses pengambilan data...")
 
 	initialData, err := fetchData(0, 3, 5*time.Second)
@@ -118,7 +127,7 @@ func main() {
 		log.Fatal("Error creating data directory:", err)
 	}
 
-	var allData []map[string]interface{}
+	var filteredData []map[string]interface{}
 
 	for offset := 0; offset < totalData; offset += 10 {
 		fmt.Printf("Mengambil data dengan offset %d...\n", offset)
@@ -127,7 +136,16 @@ func main() {
 			fmt.Printf("Error fetching data at offset %d: %v\n", offset, err)
 			continue
 		}
-		allData = append(allData, data.Data.Data...)
+
+		if filterLokasi != nil {
+			for _, record := range data.Data.Data {
+				if lokasi, ok := record["lokasi_nm"].(string); ok && locationFilter(lokasi, filterLokasi) {
+					filteredData = append(filteredData, record)
+				}
+			}
+		} else {
+			filteredData = append(filteredData, data.Data.Data...)
+		}
 	}
 
 	fmt.Println("Membuat file Excel...")
@@ -150,7 +168,7 @@ func main() {
 	f.SetCellValue(sheet, "B2", "moko")
 
 	// Set data
-	for i, record := range allData {
+	for i, record := range filteredData {
 		gajiMin, _ := strconv.ParseFloat(record["gaji_min"].(string), 64)
 		gajiMax, _ := strconv.ParseFloat(record["gaji_max"].(string), 64)
 
@@ -175,5 +193,6 @@ func main() {
 		log.Fatal(err)
 	}
 
+	fmt.Printf("Berhasil mengambil data dengan provinsi:%s, dengan jumlah total data:%d\n", *filterLokasi, len(filteredData))
 	fmt.Printf("Proses selesai! Data berhasil disimpan dalam file %s\n", excelOutputFile)
 }
