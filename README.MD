@@ -35,9 +35,3 @@ go run main.go
 ```bash
 go run main.go -provinsi="Jawa Timur"
 ```
-
-# How to get KodeRefPend
-
-1. Buka browser dan masuk ke halaman https://sscasn.bkn.go.id/
-2. Tekan f12 dan klik search bar lalu masukkan nama jurusan yang diinginkan
-3. Buka tab source dan cari field "cepat_kode"
