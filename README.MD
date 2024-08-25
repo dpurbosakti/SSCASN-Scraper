@@ -8,6 +8,16 @@ cd SSCASN-Scraper
 go mod tidy
 ```
 
+# Before running this project
+Set kodeRefPend 
+Set namaJurusan
+
+# How to get KodeRefPend
+
+1. Buka browser dan masuk ke halaman https://sscasn.bkn.go.id/
+2. Tekan f12 dan klik search bar lalu masukkan nama jurusan yang diinginkan (contoh: DIII Fisioterapi)
+3. Buka tab source dan cari field "cepat_kode"
+
 # How to run this project
 
 ```bash
